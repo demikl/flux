@@ -1,7 +1,16 @@
 This is the changelog for the Flux daemon; the changelog for the Helm
 operator is in [./CHANGELOG-helmop.md](./CHANGELOG-helmop.md).
 
-## 1.8.1 (2018-10-15)
+## 1.8.2 (2018-11-20)
+
+### Fixes
+
+- Ensure that git commands called from Flux Helm Operator use proxy
+  when defined in pod environment variables.
+  [weaveworks/flux#1535](https://github.com/weaveworks/flux/issues/1535)
+
+
+## 1.8.1 (2018-11-15)
 
 This release completes the support for `HelmRelease` resources as used
 by the Helm operator from v0.5 onwards.
