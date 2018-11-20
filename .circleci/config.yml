@@ -18,7 +18,7 @@ jobs:
       - deploy:
           name: Maybe push master image
           command: |
-            if [ -z "${CIRCLE_TAG}" -a "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ -z "${CIRCLE_TAG}" ]; then
               docker login -u "$DOCKER_LOGIN" -p "$DOCKER_PWD"
               docker push "demikl/flux:$(docker/image-tag)"
               docker push "demikl/helm-operator:$(docker/image-tag)"
