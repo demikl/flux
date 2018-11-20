@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -265,7 +266,7 @@ func execGitCmd(ctx context.Context, dir string, out io.Writer, args ...string) 
 	if dir != "" {
 		c.Dir = dir
 	}
-	c.Env = env()
+	c.Env = os.Environ()
 	c.Stdout = ioutil.Discard
 	if out != nil {
 		c.Stdout = out
