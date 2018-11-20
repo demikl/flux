@@ -3,4 +3,4 @@
 # that reliably supports authenticating against chart repos, so that
 # wins.
 HELM_VERSION=2.11.0
-HELM_CHECKSUM=2168a330eee3cba163b294ca509eb94c378bd8f79bcb46f935fe9b6fb301e205
+HELM_CHECKSUM=02a4751586d6a80f6848b58e7f6bd6c973ffffadc52b4c06652db7def02773a1
