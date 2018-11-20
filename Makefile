@@ -46,7 +46,7 @@ test:
 build/.%.done: docker/Dockerfile.%
 	mkdir -p ./build/docker/$*
 	cp $^ ./build/docker/$*/
-	$(SUDO) docker build -t quay.io/weaveworks/$* -t quay.io/weaveworks/$*:$(IMAGE_TAG) \
+	$(SUDO) docker build -t demikl/$* -t demikl/$*:$(IMAGE_TAG) \
 		--build-arg VCS_REF="$(VCS_REF)" \
 		--build-arg BUILD_DATE="$(BUILD_DATE)" \
 		-f build/docker/$*/Dockerfile.$* ./build/docker/$*
