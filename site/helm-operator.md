@@ -8,29 +8,26 @@ Events and acts accordingly, installing, upgrading or deleting a Chart release.
 
 helm-operator requires setup and offers customization though a multitude of flags.
 
-|flag                    | default                       | purpose |
-|------------------------|-------------------------------|---------|
-|--kubernetes-kubectl          |                               | Optional, explicit path to kubectl tool.|
-|--kubeconfig                  |                               | Path to a kubeconfig. Only required if out-of-cluster.|
-|--master                      |                               | The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.|
-|                              |                               | **Tiller options**|
-|--tillerIP                    |                               | Tiller IP address. Only required if out-of-cluster.|
-|--tillerPort                  |                               | Tiller port.|
-|--tillerNamespace             |                               | Tiller namespace. If not provided, the default is kube-system.| |
+|flag                          | default                       | purpose |
+|------------------------------|-------------------------------|---------|
+|--kubeconfig                  |                               | Path to a kubeconfig. Only required if out-of-cluster. |
+|--master                      |                               | The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster. |
+|--allow-namespace             |                               | If set, this limits the scope to a single namespace. if not specified, all namespaces will be watched. |
+|                              |                               | **Tiller options** |
+|--tiller-ip                   |                               | Tiller IP address. Only required if out-of-cluster. |
+|--tiller-port                 |                               | Tiller port. |
+|--tiller-namespace            |                               | Tiller namespace. If not provided, the default is kube-system. |
 |--tiller-tls-enable           |`false`                        | Enable TLS communication with Tiller. If provided, requires TLSKey and TLSCert to be provided as well. |
 |--tiller-tls-verify           |`false`                        | Verify TLS certificate from Tiller. Will enable TLS communication when provided. |
-|--tiller-tls-tls-key-path     |`/etc/fluxd/helm/tls.key`      | Path to private key file used to communicate with the Tiller server. |
-|--tiller-tls-tls-cert-path    |`/etc/fluxd/helm/tls.crt`      | Path to certificate file used to communicate with the Tiller server. |
-|--tiller-tls-tls-ca-cert-path |                               | Path to CA certificate file used to validate the Tiller server. Required if tiller-tls-verify is enabled. |
+|--tiller-tls-key-path         |`/etc/fluxd/helm/tls.key`      | Path to private key file used to communicate with the Tiller server. |
+|--tiller-tls-cert-path        |`/etc/fluxd/helm/tls.crt`      | Path to certificate file used to communicate with the Tiller server. |
+|--tiller-tls-ca-cert-path     |                               | Path to CA certificate file used to validate the Tiller server. Required if tiller-tls-verify is enabled. |
 |--tiller-tls-hostname         |                               | The server name used to verify the hostname on the returned certificates from the Tiller server. |
 |                              |                               | **repo chart changes** (none of these need overriding, usually) |
-|--git-timeout                 | `20 seconds`                  | duration after which git operations time out |
-|--git-poll-interval           | `5 minutes`                   | period at which to poll git repo for new commits|
-|--chartsSyncInterval          | 3*time.Minute                 | Interval at which to check for changed charts.|
-|                              |                               | **k8s-secret backed ssh keyring configuration**|
-|--k8s-secret-volume-mount-path | `/etc/fluxd/ssh`       | Mount location of the k8s secret storing the private SSH key|
-|--k8s-secret-data-key         | `identity`                    | Data key holding the private SSH key within the k8s secret|
-|--queueWorkerCount            |  2                            | Number of workers to process queue with Chart release jobs.|
+|--charts-sync-interval        | `3m`                          | Interval at which to check for changed charts. |
+|--git-timeout                 | `20s`                         | Duration after which git operations time out. |
+|--log-release-diffs           | `false`                       | Log the diff when a chart release diverges. **Potentially insecure.** |
+|--update-chart-deps           | `true`                        | Update chart dependencies before installing or upgrading a release. |
 
 ## Installing Weave Flux helm-operator and Helm with TLS enabled
 
@@ -177,7 +174,7 @@ First create a new Kubernetes TLS secret for the client certs;
 kubectl create secret tls helm-client --cert=tls/flux-helm-operator.pem --key=./tls/flux-helm-operator-key.pem
 ```
 
-> note; this has to be in the same namespace as the helm-operator is deployed in.
+> note: this has to be in the same namespace as the flux-helm-operator is deployed in.
 
 Deploy Flux with Helm;
 
@@ -194,6 +191,9 @@ helm upgrade --install \
     flux \
     weaveworks/flux
 ```
+> note:
+> - include --tls flags for `helm` as in the `helm ls` example, if talking to a tiller with TLS
+> - optionally specify target --namespace
 
 #### Check if it worked
 
@@ -222,3 +222,23 @@ metadata:
   selfLink: /api/v1/namespaces/helm-system/configmaps/flux-helm-tls-ca-config
   uid: c106f866-7f9e-11e8-904a-025000000001
 ```
+
+## Installing Weave Flux helm-operator for Weave Cloud
+
+In order to use the Helm operator with Weave Cloud you have to apply the `HelmRelease` CRD definition and the operator 
+deployment in the `weave` namespace:
+
+```bash
+export REPO=https://raw.githubusercontent.com/weaveworks/flux/master
+
+kubectl apply -f ${REPO}/deploy-helm/flux-helm-release-crd.yaml
+kubectl apply -f ${REPO}/deploy-helm/weave-cloud-helm-operator-deployment.yaml
+```
+
+Check the operator logs with:
+
+```bash
+kubectl -n weave logs deployment/flux-helm-operator -f
+```
+
+**Note:** that the above instructions are assuming that Tiller is deployed in the `kube-system` namespace without TLS.

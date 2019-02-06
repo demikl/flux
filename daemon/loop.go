@@ -60,7 +60,12 @@ func (d *Daemon) Loop(stop chan struct{}, wg *sync.WaitGroup, logger log.Logger)
 	// Ask for a sync, and to poll images, straight away
 	d.AskForSync()
 	d.AskForImagePoll()
+
 	for {
+		var (
+			lastKnownSyncTagRev      string
+			warnedAboutSyncTagChange bool
+		)
 		select {
 		case <-stop:
 			logger.Log("stopping", "true")
@@ -83,7 +88,7 @@ func (d *Daemon) Loop(stop chan struct{}, wg *sync.WaitGroup, logger log.Logger)
 				default:
 				}
 			}
-			if err := d.doSync(logger); err != nil {
+			if err := d.doSync(logger, &lastKnownSyncTagRev, &warnedAboutSyncTagChange); err != nil {
 				logger.Log("err", err)
 			}
 			syncTimer.Reset(d.SyncInterval)
@@ -149,7 +154,7 @@ func (d *LoopVars) AskForImagePoll() {
 
 // -- extra bits the loop needs
 
-func (d *Daemon) doSync(logger log.Logger) (retErr error) {
+func (d *Daemon) doSync(logger log.Logger, lastKnownSyncTagRev *string, warnedAboutSyncTagChange *bool) (retErr error) {
 	started := time.Now().UTC()
 	defer func() {
 		syncDuration.With(
@@ -178,6 +183,14 @@ func (d *Daemon) doSync(logger log.Logger) (retErr error) {
 	oldTagRev, err := working.SyncRevision(ctx)
 	if err != nil && !isUnknownRevision(err) {
 		return err
+	}
+	// Check if something other than the current instance of fluxd changed the sync tag.
+	// This is likely to be caused by another fluxd instance using the same tag.
+	// Having multiple instances fighting for the same tag can lead to fluxd missing manifest changes.
+	if *lastKnownSyncTagRev != "" && oldTagRev != *lastKnownSyncTagRev && !*warnedAboutSyncTagChange {
+		logger.Log("warning",
+			"detected external change in git sync tag; the sync tag should not be shared by fluxd instances")
+		*warnedAboutSyncTagChange = true
 	}
 
 	newTagRev, err := working.HeadRevision(ctx)
@@ -321,7 +334,7 @@ func (d *Daemon) doSync(logger log.Logger) (retErr error) {
 							Error:    n.Result.Error(),
 						},
 						Spec: event.ReleaseSpec{
-							Type: event.ReleaseContainersSpecType,
+							Type:                  event.ReleaseContainersSpecType,
 							ReleaseContainersSpec: &spec,
 						},
 						Cause: n.Spec.Cause,
@@ -411,23 +424,24 @@ func (d *Daemon) doSync(logger log.Logger) (retErr error) {
 	}
 
 	// Move the tag and push it so we know how far we've gotten.
-	{
-		ctx, cancel := context.WithTimeout(ctx, gitOpTimeout)
-		err := working.MoveSyncTagAndPush(ctx, newTagRev, "Sync pointer")
-		cancel()
-		if err != nil {
+	if oldTagRev != newTagRev {
+		{
+			ctx, cancel := context.WithTimeout(ctx, gitOpTimeout)
+			err := working.MoveSyncTagAndPush(ctx, newTagRev, "Sync pointer")
+			cancel()
+			if err != nil {
+				return err
+			}
+			*lastKnownSyncTagRev = newTagRev
+		}
+		logger.Log("tag", d.GitConfig.SyncTag, "old", oldTagRev, "new", newTagRev)
+		{
+			ctx, cancel := context.WithTimeout(ctx, gitOpTimeout)
+			err := d.Repo.Refresh(ctx)
+			cancel()
 			return err
 		}
 	}
-
-	if oldTagRev != newTagRev {
-		logger.Log("tag", d.GitConfig.SyncTag, "old", oldTagRev, "new", newTagRev)
-		ctx, cancel := context.WithTimeout(ctx, gitOpTimeout)
-		err := d.Repo.Refresh(ctx)
-		cancel()
-		return err
-	}
-
 	return nil
 }
 

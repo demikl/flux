@@ -7,8 +7,18 @@ import (
 	"path/filepath"
 )
 
-func updateDependencies(chartDir string) error {
+// helmHome is optional; if it's "", it's left to default
+func updateDependencies(chartDir, helmhome string) error {
 	var hasLockFile bool
+
+	// sanity check: does the chart directory exist
+	chartInfo, err := os.Stat(chartDir)
+	switch {
+	case err != nil:
+		return err
+	case !chartInfo.IsDir():
+		return fmt.Errorf("chart path %s is not a directory", chartDir)
+	}
 
 	// check if the requirements file exists
 	reqFilePath := filepath.Join(chartDir, "requirements.yaml")
@@ -36,6 +46,9 @@ func updateDependencies(chartDir string) error {
 	}
 
 	cmd := exec.Command("helm", "repo", "update")
+	if helmhome != "" {
+		cmd.Args = append(cmd.Args, "--home", helmhome)
+	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("could not update repo: %s", string(out))

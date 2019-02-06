@@ -120,7 +120,7 @@ logs the public key at startup. Find the SSH public key by
 installing [fluxctl](./fluxctl.md) and running:
 
 ```sh
-fluxctl identity
+fluxctl identity --k8s-fwd-ns flux
 ```
 
 In order to sync your cluster state with git you need to copy the
@@ -192,7 +192,8 @@ very straight-forward and are a quite natural workflow.
 # Next
 
 As a next step, you might want to dive deeper into [how to control
-Flux](fluxctl.md).
+Flux](fluxctl.md) or go through our hands-on tutorial about driving Flux,
+e.g. [automations, annotations and locks](annotations-tutorial.md).
 
 For a more advanced Helm setup, take a look at the [gitops-helm
 repository](https://github.com/stefanprodan/gitops-helm).

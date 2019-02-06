@@ -7,7 +7,7 @@ replicaCount: 1
 
 image:
   repository: quay.io/weaveworks/flux
-  tag: 1.8.1
+  tag: 1.9.0
   pullPolicy: IfNotPresent
 
 service:
@@ -15,11 +15,14 @@ service:
   port: 3030
 
 helmOperator:
+  replicaCount: 1
   create: false
   createCRD: true
   repository: quay.io/weaveworks/helm-operator
-  tag: 0.5.1
+  tag: 0.5.3
   pullPolicy: IfNotPresent
+  # Limit the operator scope to a single namespace
+  allowNamespace:
   # Update dependencies for charts
   updateChartDeps: true
   # Log the diff when a chart release diverges
@@ -36,6 +39,12 @@ helmOperator:
     certFile: "tls.crt"
     caContent: ""
     hostname: ""
+  # Mount repositories.yaml configuration in a volume
+  configureRepositories:
+    enable: false
+    volumeName: repositories-yaml
+    secretName: flux-helm-repositories
+    cacheVolumeName: repositories-cache
   # Override Flux git settings
   git:
     pollInterval: ""
@@ -118,12 +127,22 @@ registry:
   burst: 125
   # Output trace of image registry requests to log
   trace: false
-  # Use HTTP rather than HTTPS for these image registry domains eg --set registry.insecureHosts="registry1.cluster.local,registry2.cluster.local"
+  # Use HTTP rather than HTTPS for these image registry domains eg --set registry.insecureHosts="registry1.cluster.local\,registry2.cluster.local"
   insecureHosts:
   # Duration to keep cached image info. Must be < 1 month. (Deprecated)
   cacheExpiry:
+  # Do not scan images that match these glob expressions
+  excludeImage:
+  # AWS ECR settings
+  ecr:
+    region:
+    includeId:
+    excludeId:
 
 memcached:
+  repository: memcached
+  tag: 1.4.25
+  createClusterIP: true
   verbose: false
   maxItemSize: 1m
   maxMemory: 64

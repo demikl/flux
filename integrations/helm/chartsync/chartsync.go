@@ -88,6 +88,7 @@ type Config struct {
 	ChartCache string
 	LogDiffs   bool
 	UpdateDeps bool
+	GitTimeout time.Duration
 }
 
 func (c Config) WithDefaults() Config {
@@ -105,8 +106,8 @@ type clone struct {
 }
 
 type ChartChangeSync struct {
-	logger log.Logger
 	Polling
+	logger     log.Logger
 	kubeClient kubernetes.Clientset
 	ifClient   ifclientset.Clientset
 	release    *release.Release
@@ -116,9 +117,11 @@ type ChartChangeSync struct {
 
 	clonesMu sync.Mutex
 	clones   map[string]clone
+
+	namespace string
 }
 
-func New(logger log.Logger, polling Polling, clients Clients, release *release.Release, config Config) *ChartChangeSync {
+func New(logger log.Logger, polling Polling, clients Clients, release *release.Release, config Config, namespace string) *ChartChangeSync {
 	return &ChartChangeSync{
 		logger:     logger,
 		Polling:    polling,
@@ -128,6 +131,7 @@ func New(logger log.Logger, polling Polling, clients Clients, release *release.R
 		config:     config.WithDefaults(),
 		mirrors:    git.NewMirrors(),
 		clones:     make(map[string]clone),
+		namespace:  namespace,
 	}
 }
 
@@ -264,7 +268,7 @@ func mirrorName(chartSource *fluxv1beta1.GitChartSource) string {
 func (chs *ChartChangeSync) maybeMirror(fhr fluxv1beta1.HelmRelease) {
 	chartSource := fhr.Spec.ChartSource.GitChartSource
 	if chartSource != nil {
-		if ok := chs.mirrors.Mirror(mirrorName(chartSource), git.Remote{chartSource.GitURL}, git.ReadOnly); !ok {
+		if ok := chs.mirrors.Mirror(mirrorName(chartSource), git.Remote{chartSource.GitURL}, git.Timeout(chs.config.GitTimeout), git.ReadOnly); !ok {
 			chs.logger.Log("info", "started mirroring repo", "repo", chartSource.GitURL)
 		}
 	}
@@ -324,7 +328,7 @@ func (chs *ChartChangeSync) reconcileReleaseDef(fhr fluxv1beta1.HelmRelease) {
 		chartPath = filepath.Join(chartClone.export.Dir(), chartSource.Path)
 
 		if chs.config.UpdateDeps {
-			if err := updateDependencies(chartPath); err != nil {
+			if err := updateDependencies(chartPath, ""); err != nil {
 				chs.setCondition(&fhr, fluxv1beta1.HelmReleaseReleased, v1.ConditionFalse, ReasonDependencyFailed, err.Error())
 				chs.logger.Log("warning", "Failed to update chart dependencies", "namespace", fhr.Namespace, "name", fhr.Name, "error", err)
 				return
@@ -398,28 +402,20 @@ func (chs *ChartChangeSync) DeleteRelease(fhr fluxv1beta1.HelmRelease) {
 	}
 }
 
-// ---
-
-// getNamespaces gets current kubernetes cluster namespaces
-func (chs *ChartChangeSync) getNamespaces() ([]string, error) {
-	var ns []string
-	nso, err := chs.kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("Failure while retrieving kubernetes namespaces: %s", err)
-	}
-
-	for _, n := range nso.Items {
-		ns = append(ns, n.GetName())
-	}
-
-	return ns, nil
-}
-
 // getCustomResources assembles all custom resources in all namespaces
+// or in the allowed namespace if specified
 func (chs *ChartChangeSync) getCustomResources() ([]fluxv1beta1.HelmRelease, error) {
-	namespaces, err := chs.getNamespaces()
-	if err != nil {
-		return nil, err
+	var namespaces []string
+	if chs.namespace != "" {
+		namespaces = append(namespaces, chs.namespace)
+	} else {
+		nso, err := chs.kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("Failure while retrieving kubernetes namespaces: %s", err)
+		}
+		for _, n := range nso.Items {
+			namespaces = append(namespaces, n.GetName())
+		}
 	}
 
 	var fhrs []fluxv1beta1.HelmRelease

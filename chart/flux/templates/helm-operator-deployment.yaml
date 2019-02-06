@@ -1,7 +1,6 @@
-{{- $gitPollInterval := default .Values.git.pollInterval .Values.helmOperator.git.pollInterval }}
 {{- $gitTimeout := default .Values.git.timeout .Values.helmOperator.git.timeout }}
 {{- if .Values.helmOperator.create -}}
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "flux.fullname" . }}-helm-operator
@@ -11,7 +10,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.helmOperator.replicaCount }}
   selector:
     matchLabels:
       app: {{ template "flux.name" . }}-helm-operator
@@ -26,9 +25,7 @@ spec:
         app: {{ template "flux.name" . }}-helm-operator
         release: {{ .Release.Name }}
     spec:
-      {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ template "flux.serviceAccountName" . }}
-      {{- end }}
       volumes:
       {{- if .Values.ssh.known_hosts }}
       - name: sshdir
@@ -58,10 +55,20 @@ spec:
           defaultMode: 0600
       {{- end }}
       {{- end }}
+      {{- if .Values.helmOperator.configureRepositories.enable }}
+      - name: {{ .Values.helmOperator.configureRepositories.volumeName | quote }}
+        secret:
+          secretName: {{ .Values.helmOperator.configureRepositories.secretName | quote }}
+      - name: {{ .Values.helmOperator.configureRepositories.cacheVolumeName | quote }}
+        emptyDir: {}
+      {{- end }}
       containers:
       - name: flux-helm-operator
         image: "{{ .Values.helmOperator.repository }}:{{ .Values.helmOperator.tag }}"
         imagePullPolicy: {{ .Values.helmOperator.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 3030
         volumeMounts:
         {{- if .Values.ssh.known_hosts }}
         - name: sshdir
@@ -82,12 +89,20 @@ spec:
           readOnly: true
         {{- end }}
         {{- end }}
+        {{- if .Values.helmOperator.configureRepositories.enable }}
+        - name: {{ .Values.helmOperator.configureRepositories.volumeName | quote }}
+          mountPath: /var/fluxd/helm/repository
+        - name: {{ .Values.helmOperator.configureRepositories.cacheVolumeName | quote }}
+          mountPath: /var/fluxd/helm/repository/cache
+        {{- end }}
         args:
-        - --git-poll-interval={{ $gitPollInterval }}
         - --git-timeout={{ $gitTimeout }}
         - --charts-sync-interval={{ .Values.helmOperator.chartsSyncInterval }}
         - --update-chart-deps={{ .Values.helmOperator.updateChartDeps }}
         - --log-release-diffs={{ .Values.helmOperator.logReleaseDiffs }}
+        {{- if .Values.helmOperator.namespace }}
+        - --allow-namespace={{ .Values.helmOperator.allowNamespace }}
+        {{- end }}
         - --tiller-namespace={{ .Values.helmOperator.tillerNamespace }}
         {{- if .Values.helmOperator.tls.enable }}
         - --tiller-tls-enable={{ .Values.helmOperator.tls.enable }}

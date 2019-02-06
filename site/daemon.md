@@ -60,20 +60,24 @@ fluxd requires setup and offers customization though a multitude of flags.
 |--git-label             |                               | label to keep track of sync progress; overrides both --git-sync-tag and --git-notes-ref|
 |--git-sync-tag          | `flux-sync`             | tag to use to mark sync progress for this cluster (old config, still used if --git-label is not supplied)|
 |--git-notes-ref         | `flux`            | ref to use for keeping commit annotations in git notes|
-|--git-poll-interval     | `5 minutes`                 | period at which to fetch any new commits from the git repo |
-|--git-timeout           | `20 seconds`                | duration after which git operations time out |
+|--git-poll-interval     | `5m`                 | period at which to fetch any new commits from the git repo |
+|--git-timeout           | `20s`                | duration after which git operations time out |
 |**syncing**             |                             | control over how config is applied to the cluster |
-|--sync-interval         | `5 minutes`                 | apply the git config to the cluster at least this often. New commits may provoke more frequent syncs |
+|--sync-interval         | `5m`                 | apply the git config to the cluster at least this often. New commits may provoke more frequent syncs |
 |**registry cache**      |                               | (none of these need overriding, usually) |
 |--memcached-hostname    | `memcached` | hostname for memcached service to use for caching image metadata|
-|--memcached-timeout     | `1 second`                   | maximum time to wait before giving up on memcached requests|
+|--memcached-timeout     | `1s`                   | maximum time to wait before giving up on memcached requests|
 |--memcached-service     | `memcached`                     | SRV service used to discover memcache servers|
-|--registry-cache-expiry | `1 hour`                  | Duration to keep cached registry tag info. Must be < 1 month.|
-|--registry-poll-interval| `5 minutes`                   | period at which to poll registry for new images|
+|--registry-cache-expiry | `1h`                  | Duration to keep cached registry tag info. Must be < 1 month.|
+|--registry-poll-interval| `5m`                   | period at which to poll registry for new images|
 |--registry-rps          | `200`                           | maximum registry requests per second per host|
 |--registry-burst        | `125`      | maximum number of warmer connections to remote and memcache|
 |--registry-insecure-host| []         | registry hosts to use HTTP for (instead of HTTPS) |
+|--registry-exclude-image| `["k8s.gcr.io/*"]` | do not scan images that match these glob expressions |
 |--docker-config         | `""`       | path to a Docker config file with default image registry credentials |
+|--registry-ecr-region   | `[]`       | Allow these AWS regions when scanning images from ECR (multiple values allowed); defaults to the detected cluster region |
+|--registry-ecr-include-id | `[]`       | Include these AWS account ID(s) when scanning images in ECR (multiple values allowed); empty means allow all, unless excluded |
+|--registry-ecr-exclude-id | `[<EKS SYSTEM ACCOUNT>]` | Exclude these AWS account ID(s) when scanning ECR (multiple values allowed); defaults to the EKS system account, so system images will not be scanned |
 |**k8s-secret backed ssh keyring configuration**      |  | |
 |--k8s-secret-name       | `flux-git-deploy`               | name of the k8s secret used to store the private SSH key|
 |--k8s-secret-volume-mount-path | `/etc/fluxd/ssh`         | mount location of the k8s secret storing the private SSH key|

@@ -1,6 +1,106 @@
 This is the changelog for the Flux daemon; the changelog for the Helm
 operator is in [./CHANGELOG-helmop.md](./CHANGELOG-helmop.md).
 
+## 1.9.0 (2019-01-09)
+
+This release adds native support for ECR (Amazon Elastic Container
+Registry) authentication.
+
+### Fixes
+
+- Make sure a `/etc/hosts` mounted into the fluxd container is
+  respected [weaveworks/flux#1630][#1630]
+- Proceed more gracefully when RBAC rules restrict access
+  [weaveworks/flux#1620][#1620]
+- Show more contextual information when `fluxctl` fails
+  [weaveworks/flux#1615][#1615]
+
+### Improvements
+
+- Authenticate to ECR using a token from AWS IAM, when possible
+  [weaveworks/flux#1619][#1619]
+- Make it possible, and the default for new deployments, to configure
+  a ClusterIP for memcached (previously it was only possible to use
+  DNS service discovery) [weaveworks/flux#1618][#1618]
+
+## Thanks
+
+This release was made possible by welcome contributions from
+@2opremio, @agcooke, @cazzoo, @davidkarlsen, @dholbach, @dmarkey,
+@donifer, @ericbarch, @errordeveloper, @florianrusch, @gellweiler,
+@hiddeco, @isindir, @k, @marcincuber, @markbenschop, @Morriz, @rndstr,
+@roffe, @runningman84, @shahbour, @squaremo, @srueg, @stefanprodan,
+@stephenmoloney, @switchboardOp, @tobru, @tux-00, @u-phoria,
+@Viji-Sarathy-Bose.
+
+[#1615]: https://github.com/weaveworks/flux/pull/1615
+[#1618]: https://github.com/weaveworks/flux/pull/1618
+[#1619]: https://github.com/weaveworks/flux/pull/1619
+[#1620]: https://github.com/weaveworks/flux/pull/1620
+[#1630]: https://github.com/weaveworks/flux/pull/1630
+
+## 1.8.2 (2018-12-19)
+
+This holiday season release fixes a handful of annoyances, and adds an
+experimental `--watch` flag for following the progress of `fluxctl
+release`.
+
+### Fixes
+
+- Respect proxy env entries for git operations
+  [weaveworks/flux#1556][#1556]
+- Only push the "sync tag" when the synced revision has changed,
+  avoiding spurious notifications [weaveworks/flux#1605][#1605]
+- Return any sync errors for workloads in the ListControllers API
+  [weaveworks/flux#1521][#1521]
+
+### Improvements
+
+- The experimental flag `fluxctl release --watch` shows the rollout
+  progress of workloads in the release [weaveworks/flux#1525][#1525]
+- The example manifests now include resource requests, to help
+  Kubernetes with scheduling [weaveworks/flux#1541][#1541]
+- We have a more comprehensive [example git
+  repo](https://github.com/weaveworks/flux-get-started), which is
+  mentioned consistently throughout the docs
+  [weaveworks/flux#1527][#1527] and [weaveworks/flux#1540][#1540].
+- Many clarifications and better structure in the docs
+  weaveworks/flux{[#1597], [#1595], [#1563], [#1555], [#1548],
+  [#1550], [#1549], [#1547], [#1508], [#1557]}
+- Registry scanning produces far less log spam, and abandons scans as
+  soon as possible on being throttled [weaveworks/flux#1538][#1538]
+
+### Thanks
+
+Thanks to @Alien2150, @batpok, @bboreham, @brantb, @camilb,
+@davidkarlsen, @dbluxo, @demikl, @dholbach, @dpgeekzero, @etos,
+@hiddeco, @iandotmartin, @jakubbujny, @JeremyParker, @JimPruitt,
+@johnraz, @kopachevsky, @kozejonaz, @leoblanc, @marccarre,
+@marcincuber, @mgazza, @michalschott, @montyz, @ncabatoff, @nmaupu,
+@Nogbit, @pdeveltere, @rampreethethiraj, @rndstr, @samisq, @scjudd,
+@sfrique, @Smirl, @songsak2299, @squaremo, @stefanprodan,
+@stephenmoloney, @Timer, @whereismyjetpack, @willnewby for
+contributions in the period up to this release.
+
+[#1508]: https://github.com/weaveworks/flux/pull/1508
+[#1521]: https://github.com/weaveworks/flux/pull/1521
+[#1525]: https://github.com/weaveworks/flux/pull/1525
+[#1527]: https://github.com/weaveworks/flux/pull/1527
+[#1538]: https://github.com/weaveworks/flux/pull/1538
+[#1540]: https://github.com/weaveworks/flux/pull/1540
+[#1541]: https://github.com/weaveworks/flux/pull/1541
+[#1547]: https://github.com/weaveworks/flux/pull/1547
+[#1548]: https://github.com/weaveworks/flux/pull/1548
+[#1549]: https://github.com/weaveworks/flux/pull/1549
+[#1550]: https://github.com/weaveworks/flux/pull/1550
+[#1555]: https://github.com/weaveworks/flux/pull/1555
+[#1556]: https://github.com/weaveworks/flux/pull/1556
+[#1557]: https://github.com/weaveworks/flux/pull/1557
+[#1563]: https://github.com/weaveworks/flux/pull/1563
+[#1595]: https://github.com/weaveworks/flux/pull/1595
+[#1597]: https://github.com/weaveworks/flux/pull/1597
+[#1605]: https://github.com/weaveworks/flux/pull/1605
+
 ## 1.8.1 (2018-10-15)
 
 This release completes the support for `HelmRelease` resources as used
@@ -47,7 +147,7 @@ range. If you run into difficulties relating to the `kubectl` version,
 
 ### Thanks
 
-Thanks goes to @Ashiroq, @JimPruitt, @MansM, @Morriz, @Smirl, @Timer,
+Thanks go to @Ashiroq, @JimPruitt, @MansM, @Morriz, @Smirl, @Timer,
 @aytekk, @bzon, @camilb, @claude-leveille, @demikl, @dholbach,
 @endrec, @foot, @hiddeco, @jrcole2884, @lelenanam, @marcusolsson,
 @mellena1, @montyz, @olib963, @rade, @rndstr, @sfitts, @squaremo,

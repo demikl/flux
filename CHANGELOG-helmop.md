@@ -1,3 +1,58 @@
+## 0.5.4 (TBA)
+
+### Improvements
+
+ - Add option to limit the Helm operator to a single namespace
+   [weaveworks/flux#1664](https://github.com/weaveworks/flux/pull/1664)
+
+## 0.5.3 (2019-01-14)
+
+### Improvements
+
+  - `HelmRelease` now has a `resetValues` field which when set to `true`
+    resets the values to the ones built into the chart
+    [weaveworks/flux#1628](https://github.com/weaveworks/flux/pull/1628)
+  - The operator now exposes a HTTP webserver (by default on port
+    `:3030`) with Prometheus metrics on `/metrics` and a health check
+    endpoint on `/healthz`
+    [weaveworks/flux#1653](https://github.com/weaveworks/flux/pull/1653)
+
+### Thanks
+
+A thousand thanks to @davidkarlsen, @hiddeco, @ncabatoff, @stefanprodan,
+@squaremo and others for their contributions leading to this release.
+
+## 0.5.2 (2018-12-20)
+
+### Bug fixes
+
+  - Respect proxy env entries for git operations
+    [weaveworks/flux#1556](https://github.com/weaveworks/flux/pull/1556)
+  - Reimplement git timeout after accidentally removing it in `0.5.0`
+    [weaveworks/flux#1565](https://github.com/weaveworks/flux/pull/1565)
+  - Mark `--git-poll-interval` flag as deprecated
+    [weaveworks/flux#1565](https://github.com/weaveworks/flux/pull/1565)
+  - Only update chart dependencies if a `requirements.yaml` exists
+    weaveworks/flux{[#1561](https://github.com/weaveworks/flux/pull/1561), [#1606](https://github.com/weaveworks/flux/pull/1606)}
+    
+### Improvements
+
+  - `HelmRelease` now has a `timeout` field (defaults to `300s`),
+    giving you control over the amount of time it may take for Helm to
+    install or upgrade your chart
+    [weaveworks/flux#1566](https://github.com/weaveworks/flux/pull/1566)
+  - The Helm operator [flag docs](./site/helm-operator.md#setup-and-configuration)
+    have been updated
+    [weaveworks/flux#1594](https://github.com/weaveworks/flux/pull/1594)
+  - Added tests to ensure Helm dependencies update behaviour is always as
+    expected
+    [weaveworks/flux#1562](https://github.com/weaveworks/flux/pull/1562)
+
+### Thanks
+
+Thanks to @stephenmoloney, @sfrique, @mgazza, @stefanprodan, @squaremo,
+@rade and @hiddeco for their contributions.
+
 ## 0.5.1 (2018-11-21)
 
 ### Bug fixes
